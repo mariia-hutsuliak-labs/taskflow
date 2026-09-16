@@ -1,0 +1,64 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: taskflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: taskflow
+      POSTGRES_DB: taskflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - taskflow_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflow -d taskflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: taskflow-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://taskflow:taskflow@db:5432/taskflow
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    container_name: taskflow-frontend
+    restart: unless-stopped
+    environment:
+      API_URL: http://localhost:8000
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  worker:
+    build: ./worker
+    container_name: taskflow-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://taskflow:taskflow@db:5432/taskflow
+      POLL_INTERVAL_SECONDS: "10"
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+volumes:
+  taskflow_db_data:

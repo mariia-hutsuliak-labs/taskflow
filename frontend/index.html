@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>TaskFlow</h1>
+      <p class="subtitle">Простий менеджер задач</p>
+    </header>
+
+    <form id="task-form" class="task-form">
+      <input type="text" id="title" placeholder="Назва задачі" required />
+      <input type="text" id="description" placeholder="Опис (необов'язково)" />
+      <input type="datetime-local" id="due_date" />
+      <button type="submit">Додати</button>
+    </form>
+
+    <p id="error" class="error" hidden></p>
+
+    <ul id="task-list" class="task-list"></ul>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
