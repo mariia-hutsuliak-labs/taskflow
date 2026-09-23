@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app import (
     crud,
-    models, # noqa: F401 - registers ORM tables on Base before create_all()
+    models,  # noqa: F401 - registers ORM tables on Base before create_all()
     schemas,
 )
 from app.database import Base, engine, get_db

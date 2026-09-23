@@ -65,4 +65,3 @@ def test_reports_when_nothing_is_overdue(engine, caplog):
         check_overdue_tasks(engine)
 
     assert "No overdue tasks." in caplog.text
-    
