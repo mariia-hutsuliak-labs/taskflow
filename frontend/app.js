@@ -20,18 +20,6 @@ function clearError() {
   errorEl.textContent = "";
 }
 
-function formatDate(isoString) {
-  if (!isoString) return null;
-  const date = new Date(isoString);
-  return date.toLocaleString("uk-UA", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function renderTasks(tasks) {
   listEl.innerHTML = "";
 
@@ -109,13 +97,13 @@ async function loadTasks() {
 
 async function createTask(event) {
   event.preventDefault();
-  const payload = {
-    title: titleInput.value.trim(),
-    description: descriptionInput.value.trim(),
-    due_date: dueDateInput.value ? new Date(dueDateInput.value).toISOString() : null,
-  };
+  const payload = buildTaskPayload(
+    titleInput.value,
+    descriptionInput.value,
+    dueDateInput.value
+  );
 
-  if (!payload.title) return;
+  if (!payload) return;
 
   try {
     const response = await fetch(`${API_URL}/tasks`, {
