@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from worker import POLL_INTERVAL_SECONDS, check_overdue_tasks  # noqa: E402
 
+
 @pytest.fixture
 def engine():
     eng = create_engine(
@@ -64,3 +65,4 @@ def test_reports_when_nothing_is_overdue(engine, caplog):
         check_overdue_tasks(engine)
 
     assert "No overdue tasks." in caplog.text
+    
