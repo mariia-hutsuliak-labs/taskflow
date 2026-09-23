@@ -1,0 +1,16 @@
+{
+  "name": "taskflow-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TaskFlow static frontend (served by nginx)",
+  "scripts": {
+    "lint": "eslint .",
+    "build": "node build.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0"
+  }
+}
