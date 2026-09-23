@@ -1,7 +1,7 @@
 # TaskFlow
 
 Невеликий сервіс керування задачами (todo-менеджер), зроблений як навчальний
-проєкт для лабораторної роботи з DevOps: "Віртуалізація та контейнеризація".
+проєкт для лабораторних робіт з DevOps.
 
 ## Архітектура
 
@@ -15,6 +15,8 @@
 
 ```
 taskflow/
+├── .github/workflows/
+│   └── ci.yml          # CI-пайплайн
 ├── backend/
 │   ├── app/            # код FastAPI застосунку
 │   ├── tests/          # юніт + інтеграційні тести (pytest)
@@ -24,6 +26,10 @@ taskflow/
 │   ├── index.html
 │   ├── style.css
 │   ├── app.js
+│   ├── utils.js
+│   ├── tests/          # тести (node --test)
+│   ├── build.js
+│   ├── package.json
 │   └── Dockerfile
 ├── worker/
 │   ├── worker.py
@@ -31,6 +37,7 @@ taskflow/
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── docker-compose.yml
+├── ruff.toml
 └── README.md
 ```
 
@@ -81,11 +88,27 @@ pip install -r requirements.txt
 pytest
 ```
 
-## Відповідність вимогам лабораторної
+```bash
+cd frontend
+npm ci
+npm run lint
+npm test
+```
 
-1. Проєкт — веб-застосунок (FastAPI) + PostgreSQL БД. ✅
-2. Юніт та інтеграційні тести (pytest). ✅
-3. Складається з декількох частин: `backend` + `worker` (знадобиться для
-   лабораторної з мікросервісами). ✅
-4. Dockerfile для кожної частини (`backend/Dockerfile`, `worker/Dockerfile`). ✅
-5. `docker-compose.yml`, що піднімає весь проєкт разом з БД. ✅
+## CI/CD
+
+Пайплайн на GitHub Actions: `.github/workflows/ci.yml`.
+Запускається на Pull Request у `main` і на push у `main`.
+
+- **backend, worker** — Ruff, збірка, pytest (кеш pip)
+- **frontend** — ESLint, `npm run build`, `node --test` (кеш npm)
+- **Docker image** — запускається після успіху всіх попередніх: збірка образу,
+  сканування Trivy, публікація в ghcr.io (тільки для push)
+
+Теги образів: `sha-<коміт>` і `latest` (тільки `main`).
+
+```bash
+docker pull ghcr.io/mariiahutsuliak/taskflow-backend:latest
+docker run --rm -p 8000:8000 -e DATABASE_URL=sqlite:////tmp/taskflow.db \
+  ghcr.io/mariiahutsuliak/taskflow-backend:latest
+```

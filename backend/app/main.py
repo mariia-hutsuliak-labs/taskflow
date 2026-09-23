@@ -1,26 +1,32 @@
+from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
-from app.database import Base, SessionLocal, engine, get_db
+from app import (
+    crud,
+    models,  # noqa: F401 - registers ORM tables on Base before create_all()
+    schemas,
+)
+from app.database import Base, engine, get_db
 
-app = FastAPI(title="TaskFlow API")
 
-# Allow the static frontend (served from a different port/container) to
-# call this API directly from the browser.
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(title="TaskFlow API", lifespan=lifespan)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    # For this lab we create tables directly instead of running migrations.
-    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/health")
