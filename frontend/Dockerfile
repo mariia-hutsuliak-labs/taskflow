@@ -1,4 +1,4 @@
-FROM nginx:1.27-alpine
+FROM nginx:1.30-alpine
 
 COPY index.html style.css app.js utils.js /usr/share/nginx/html/
 COPY docker-entrypoint.sh /docker-entrypoint.sh
