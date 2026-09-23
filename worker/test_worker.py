@@ -9,8 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from worker import POLL_INTERVAL_SECONDS, check_overdue_tasks
-
+from worker import POLL_INTERVAL_SECONDS, check_overdue_tasks  # noqa: E402
 
 @pytest.fixture
 def engine():
