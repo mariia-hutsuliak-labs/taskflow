@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: taskflow
+  labels:
+    app: worker
+    app.kubernetes.io/part-of: taskflow
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+        app.kubernetes.io/part-of: taskflow
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/mariia-hutsuliak-labs/taskflow-worker:1.0.0
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-secret
+                  key: DATABASE_URL
+            - name: POLL_INTERVAL_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: taskflow-config
+                  key: POLL_INTERVAL_SECONDS
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - |
+                  import os
+                  from sqlalchemy import create_engine, text
+                  with create_engine(os.environ["DATABASE_URL"]).connect() as conn:
+                      conn.execute(text("SELECT 1"))
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - |
+                  import os
+                  from sqlalchemy import create_engine, text
+                  with create_engine(os.environ["DATABASE_URL"]).connect() as conn:
+                      conn.execute(text("SELECT 1"))
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+
