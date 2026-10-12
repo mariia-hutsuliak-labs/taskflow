@@ -1,0 +1,8 @@
+apiVersion: v2
+name: taskflow
+description: Helm-чарт застосунку TaskFlow (backend, frontend, worker, PostgreSQL)
+type: application
+# Версія самого чарта (шаблони, values). Збільшується при зміні чарта.
+version: 0.2.0
+# Версія застосунку, який розгортає чарт (теги образів сервісів).
+appVersion: "1.0.0"

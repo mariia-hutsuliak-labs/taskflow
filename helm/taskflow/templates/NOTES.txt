@@ -1,0 +1,24 @@
+Реліз "{{ .Release.Name }}" встановлено в namespace "{{ .Release.Namespace }}" (чарт {{ .Chart.Name }}-{{ .Chart.Version }}, застосунок {{ .Chart.AppVersion }}).
+
+Перевірити стан:
+
+  kubectl get pods -n {{ .Release.Namespace }}
+  helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+Як відкрити застосунок:
+{{- if .Values.ingress.enabled }}
+
+  1. Додайте в /etc/hosts рядок:  127.0.0.1 {{ .Values.ingress.host }}
+  2. В окремому терміналі запустіть:  minikube tunnel
+  3. Відкрийте http://{{ .Values.ingress.host }}  (документація API: http://{{ .Values.ingress.host }}/docs)
+{{- else }}
+
+  Ingress вимкнений, тому відкрийте застосунок через port-forward
+  (в двох окремих терміналах):
+
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "taskflow.fullname" . }}-backend 8000:{{ .Values.backend.service.port }}
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "taskflow.fullname" . }}-frontend 3000:{{ .Values.frontend.service.port }}
+
+  Потім відкрийте http://localhost:3000 (API: http://localhost:8000/docs).
+  Адреса API для фронтенду зараз: {{ .Values.config.apiUrl }}
+{{- end }}

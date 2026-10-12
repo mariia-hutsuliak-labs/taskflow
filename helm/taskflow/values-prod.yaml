@@ -1,0 +1,62 @@
+# Продуктове середовище: більше реплік і ресурсів, образи 1.1.0, Ingress.
+# Пароль БД тут НЕ зберігається. Передавайте його під час встановлення:
+#   --set secret.postgresPassword="$TASKFLOW_DB_PASSWORD"
+
+config:
+  apiUrl: http://taskflow.local
+
+secret:
+  postgresPassword: ""
+
+backend:
+  replicaCount: 3
+  image:
+    tag: "1.1.0"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+
+frontend:
+  replicaCount: 3
+  image:
+    tag: "1.1.0"
+  service:
+    type: ClusterIP
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 400m
+      memory: 256Mi
+
+worker:
+  image:
+    tag: "1.1.0"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 400m
+      memory: 256Mi
+
+db:
+  persistence:
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: taskflow.local
