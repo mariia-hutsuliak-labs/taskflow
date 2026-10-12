@@ -1,6 +1,6 @@
 FROM nginx:1.30-alpine
 
-RUN apk upgrade --no-cache
+RUN apk upgrade --no-cache --available
 
 COPY index.html style.css app.js utils.js /usr/share/nginx/html/
 COPY docker-entrypoint.sh /docker-entrypoint.sh

@@ -1,0 +1,36 @@
+# Середовище розробки: мінімум ресурсів, без Ingress, образи 1.0.0.
+# Збігається зі значеннями за замовчуванням, але зафіксоване явно,
+# щоб його було зручно порівнювати з values-prod.yaml.
+
+config:
+  apiUrl: http://localhost:8000
+
+backend:
+  replicaCount: 1
+  image:
+    tag: "1.0.0"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+frontend:
+  replicaCount: 1
+  image:
+    tag: "1.0.0"
+  service:
+    type: NodePort
+
+worker:
+  image:
+    tag: "1.0.0"
+
+db:
+  persistence:
+    size: 1Gi
+
+ingress:
+  enabled: false

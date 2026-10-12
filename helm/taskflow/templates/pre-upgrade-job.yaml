@@ -1,0 +1,35 @@
+{{- if .Values.hooks.preUpgrade.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "taskflow.fullname" . }}-pre-upgrade-check
+  labels:
+    {{- include "taskflow.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pre-upgrade-check
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 120
+  template:
+    metadata:
+      labels:
+        {{- include "taskflow.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/part-of: taskflow
+        app.kubernetes.io/component: pre-upgrade-check
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: check-db
+          image: "{{ .Values.db.image.repository }}:{{ .Values.db.image.tag }}"
+          imagePullPolicy: {{ .Values.db.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              echo "pre-upgrade: перевіряю доступність бази даних перед оновленням"
+              until pg_isready -h {{ include "taskflow.fullname" . }}-db -p {{ .Values.db.service.port }}; do sleep 2; done
+              echo "pre-upgrade: база даних доступна, оновлення можна продовжувати"
+{{- end }}
