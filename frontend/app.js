@@ -140,5 +140,17 @@ async function deleteTask(id) {
   }
 }
 
+async function loadVersion() {
+  try {
+    const response = await fetch(`${API_URL}/version`);
+    if (!response.ok) return;
+    const data = await response.json();
+    document.getElementById("app-version").textContent = "v" + data.version;
+  } catch (err) {
+    // the version label is optional
+  }
+}
+
 form.addEventListener("submit", createTask);
 loadTasks();
+loadVersion();
