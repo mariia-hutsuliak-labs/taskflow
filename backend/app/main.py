@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -32,6 +33,11 @@ app.add_middleware(
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
+
+
+@app.get("/version")
+def version() -> dict:
+    return {"version": os.getenv("APP_VERSION", "dev")}
 
 
 @app.post("/tasks", response_model=schemas.TaskOut, status_code=201)

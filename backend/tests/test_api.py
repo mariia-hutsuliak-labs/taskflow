@@ -89,3 +89,10 @@ def test_delete_task():
 def test_get_nonexistent_task_returns_404():
     response = client.get("/tasks/9999")
     assert response.status_code == 404
+
+
+def test_version_reads_env(monkeypatch):
+    monkeypatch.setenv("APP_VERSION", "9.9.9")
+    response = client.get("/version")
+    assert response.status_code == 200
+    assert response.json() == {"version": "9.9.9"}
