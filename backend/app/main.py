@@ -11,6 +11,7 @@ from app import (
     schemas,
 )
 from app.database import Base, engine, get_db
+from app.observability import setup_observability
 
 
 @asynccontextmanager
@@ -20,6 +21,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="TaskFlow API", lifespan=lifespan)
+setup_observability(app)
 
 
 app.add_middleware(
