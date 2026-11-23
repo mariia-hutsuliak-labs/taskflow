@@ -53,3 +53,19 @@ def test_ensure_table_is_idempotent(server):
 
 def test_unknown_path(server):
     assert server.route("GET", "/nope")[0] == 404
+
+
+def test_boom_returns_500(server):
+    status, body = server.route("GET", "/boom")
+    assert status == 500
+    assert body["instance"] == "app7"
+
+
+def test_work_delays_response(server):
+    import time
+
+    started = time.perf_counter()
+    status, body = server.route("GET", "/work?delay_ms=100")
+    assert status == 200
+    assert body["delay_ms"] == 100
+    assert time.perf_counter() - started >= 0.1
