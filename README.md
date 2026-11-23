@@ -425,3 +425,64 @@ REST API з ресурсами `/tasks` та `/tasks/{id}` (інтеграція
 pip install -r serverless/requirements-dev.txt
 pytest serverless/tests
 ```
+
+## Балансування навантаження (лаба 9)
+
+Три екземпляри HTTP-застосунку з лаби 8 в Docker, перед якими стоїть nginx. Усі екземпляри
+працюють з однією таблицею DynamoDB в LocalStack, тому дані спільні, а кожна відповідь
+повертає ідентифікатор екземпляра, який її обробив.
+
+```
+curl ──▶ nginx :8080 ──┬──▶ app1 :8000 ──┐
+        (round robin)  ├──▶ app2 :8000 ──┼──▶ LocalStack (DynamoDB taskflow-tasks)
+                       └──▶ app3 :8000 ──┘
+```
+
+Застосунок (`loadbalancer/app/server.py`) — тонка HTTP-обгортка над тією самою
+Lambda-функцією `serverless/lambda/handler.py`. Додатково має:
+
+| Метод | Шлях      | Опис                                        |
+|-------|-----------|---------------------------------------------|
+| GET   | /health   | Перевірка працездатності: `{"status":"ok","instance":"app1"}` |
+| GET   | /whoami   | Ідентифікатор екземпляра                    |
+| *     | /tasks…   | Ті самі операції, що й у лабі 8             |
+
+Ідентифікатор задається змінною `INSTANCE_ID`, а також повертається в заголовку `X-Instance-Id`.
+nginx додає заголовок `X-Upstream` з адресою сервера, що відповів.
+
+### Балансування та відмовостійкість
+
+`loadbalancer/nginx/nginx.conf`: група `upstream` з трьох серверів, алгоритм за замовчуванням
+(round robin). Параметри `max_fails=1 fail_timeout=5s` виключають недоступний сервер на 5 секунд,
+а `proxy_next_upstream` повторює запит на іншому сервері, тож клієнт не бачить помилки.
+Docker health check (`/health` кожні 5 с) контролює стан контейнерів, а nginx стартує лише
+після того, як усі три екземпляри здорові.
+
+### Запуск
+
+LocalStack з лаби 8 займає той самий порт 4566, тому спершу його зупиніть.
+
+```bash
+docker compose -f docker-compose.localstack.yml down
+docker compose -f docker-compose.lb.yml up -d --build
+docker compose -f docker-compose.lb.yml ps
+curl http://localhost:8080/health
+```
+
+### Експерименти
+
+```bash
+./loadbalancer/scripts/distribution.sh 30   # розподіл запитів між екземплярами
+./loadbalancer/scripts/failover.sh 30       # вимкнути app2, перевірити, відновити
+./loadbalancer/scripts/compare.sh 30        # з балансувальником і без нього
+```
+
+Без балансувальника запити йдуть напряму на `app1` (порт 8081), з балансувальником —
+через nginx (порт 8080).
+
+### Тести
+
+```bash
+pip install -r serverless/requirements-dev.txt
+pytest loadbalancer/tests serverless/tests
+```

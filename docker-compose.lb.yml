@@ -1,0 +1,69 @@
+x-app: &app
+  build:
+    context: .
+    dockerfile: loadbalancer/app/Dockerfile
+  depends_on:
+    localstack:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/health', timeout=2)"]
+    interval: 5s
+    timeout: 3s
+    retries: 3
+    start_period: 5s
+
+services:
+  localstack:
+    image: localstack/localstack:3.8
+    container_name: taskflow-lb-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: dynamodb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app1:
+    <<: *app
+    container_name: taskflow-app1
+    ports:
+      - "8081:8000"  # direct access to one instance, bypassing the balancer
+    environment: &env
+      INSTANCE_ID: app1
+      TABLE_NAME: taskflow-tasks
+      DYNAMODB_ENDPOINT: http://localstack:4566
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+
+  app2:
+    <<: *app
+    container_name: taskflow-app2
+    environment:
+      <<: *env
+      INSTANCE_ID: app2
+
+  app3:
+    <<: *app
+    container_name: taskflow-app3
+    environment:
+      <<: *env
+      INSTANCE_ID: app3
+
+  nginx:
+    image: nginx:1.30-alpine
+    container_name: taskflow-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./loadbalancer/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      app1:
+        condition: service_healthy
+      app2:
+        condition: service_healthy
+      app3:
+        condition: service_healthy
