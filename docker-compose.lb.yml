@@ -19,7 +19,7 @@ services:
     ports:
       - "4566:4566"
     environment:
-      SERVICES: dynamodb
+      SERVICES: dynamodb,cloudwatch
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
       interval: 5s
@@ -35,6 +35,8 @@ services:
       INSTANCE_ID: app1
       TABLE_NAME: taskflow-tasks
       DYNAMODB_ENDPOINT: http://localstack:4566
+      CLOUDWATCH_ENDPOINT: http://localstack:4566
+      METRICS_INTERVAL: "10"
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
