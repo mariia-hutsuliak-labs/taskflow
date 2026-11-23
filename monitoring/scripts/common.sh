@@ -1,21 +1,16 @@
 #!/usr/bin/env bash
 # Shared settings for the CloudWatch monitoring scripts (LocalStack, no real AWS account).
+# Run the scripts from the repository root.
 ENDPOINT="${ENDPOINT:-http://localhost:4566}"
-export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-test}"
-export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-test}"
-export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
-export AWS_PAGER=""
+export ENDPOINT
 LB_URL="${LB_URL:-http://localhost:8080}"
 NAMESPACE="TaskFlow"
 ALARM_ERRORS="taskflow-high-errors"
 ALARM_LATENCY="taskflow-high-latency"
 
-aws_() { aws --endpoint-url "$ENDPOINT" "$@"; }
-
 # alarm_state <alarm-name>: prints OK / ALARM / INSUFFICIENT_DATA
 alarm_state() {
-  aws_ cloudwatch describe-alarms --alarm-names "$1" \
-    --query 'MetricAlarms[0].StateValue' --output text
+  python3 monitoring/alarms.py state "$1"
 }
 
 # wait_alarm <alarm-name> <state> <timeout-seconds>: wait until the alarm reaches the state.

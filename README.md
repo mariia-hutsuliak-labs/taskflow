@@ -511,7 +511,7 @@ pytest loadbalancer/tests serverless/tests
 ### Сповіщення (CloudWatch Alarms)
 
 ```bash
-./monitoring/scripts/setup_alarms.sh
+python3 monitoring/alarms.py setup
 ```
 
 | Alarm | Умова |
@@ -523,7 +523,7 @@ pytest loadbalancer/tests serverless/tests
 
 ```bash
 docker compose -f docker-compose.lb.yml up -d --build
-./monitoring/scripts/setup_alarms.sh
+python3 monitoring/alarms.py setup
 ./monitoring/scripts/scenario.sh        # нормальне навантаження → помилки → відновлення → затримки → відновлення
 python3 monitoring/analyze.py           # таблиця за хвилинами + графіки в monitoring/charts/
 ```
@@ -536,3 +536,9 @@ python3 monitoring/analyze.py           # таблиця за хвилинами
 ```bash
 pytest loadbalancer/tests serverless/tests
 ```
+
+### Версія boto3
+
+`boto3` закріплено нижче 1.42 (у `Dockerfile` і `requirements-dev.txt`): новіші версії та AWS CLI v2
+звертаються до CloudWatch протоколом, який LocalStack 3.8 не підтримує, і `PutMetricData` та
+`PutMetricAlarm` повертають помилку 500.
