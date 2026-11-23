@@ -9,3 +9,5 @@ venv/
 node_modules/
 frontend/dist/
 .idea/
+# Lab 8
+serverless/.api_url
