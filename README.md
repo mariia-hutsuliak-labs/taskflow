@@ -486,3 +486,53 @@ curl http://localhost:8080/health
 pip install -r serverless/requirements-dev.txt
 pytest loadbalancer/tests serverless/tests
 ```
+
+## Лабораторна робота №10: моніторинг через CloudWatch (LocalStack)
+
+Продовжує лабу 9: ті самі три екземпляри за nginx, але тепер вони публікують власні метрики
+в Amazon CloudWatch (емулятор LocalStack, сервіс `cloudwatch`).
+
+### Метрики
+
+`loadbalancer/app/metrics.py` накопичує дані про кожен запит і раз на 10 секунд відправляє їх
+через `PutMetricData` у простір імен `TaskFlow`:
+
+| Метрика | Що означає | Статистика |
+|---|---|---|
+| `RequestCount` | кількість оброблених запитів | Sum |
+| `ErrorCount` | відповіді з кодом 5xx | Sum |
+| `Latency` | час обробки запиту, мс | Average, Maximum |
+
+Кожна метрика публікується двічі: без вимірів (весь сервіс, за нею працюють сповіщення) і з виміром
+`Instance` (окремо для app1, app2, app3). Запити `/health` не рахуються.
+
+Для експериментів додано `GET /work?delay_ms=N` (штучна затримка) і `GET /boom` (завжди 500).
+
+### Сповіщення (CloudWatch Alarms)
+
+```bash
+./monitoring/scripts/setup_alarms.sh
+```
+
+| Alarm | Умова |
+|---|---|
+| `taskflow-high-errors` | `ErrorCount` (Sum за 60 с) ≥ 10 |
+| `taskflow-high-latency` | `Latency` (Average за 60 с) > 200 мс |
+
+### Експеримент
+
+```bash
+docker compose -f docker-compose.lb.yml up -d --build
+./monitoring/scripts/setup_alarms.sh
+./monitoring/scripts/scenario.sh        # нормальне навантаження → помилки → відновлення → затримки → відновлення
+python3 monitoring/analyze.py           # таблиця за хвилинами + графіки в monitoring/charts/
+```
+
+`analyze.py` читає метрики через `GetMetricStatistics`, рахує кількість запитів за хвилину,
+частку помилок і середній час відповіді та будує графіки.
+
+### Тести
+
+```bash
+pytest loadbalancer/tests serverless/tests
+```
