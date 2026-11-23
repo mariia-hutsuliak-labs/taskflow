@@ -369,3 +369,59 @@ kubectl logs job/taskflow-pre-upgrade-check -n taskflow
 ```bash
 kubectl delete job,pod -n taskflow -l app.kubernetes.io/instance=taskflow
 ```
+
+## Serverless-версія в LocalStack (лаба 8)
+
+Мінімальна версія API задач у стилі AWS: HTTP-запит → **API Gateway** → **Lambda** → **DynamoDB**.
+Усе працює локально в LocalStack, без реального AWS-акаунта.
+
+```
+curl ─▶ API Gateway (REST, stage dev) ─▶ Lambda taskflow-api ─▶ DynamoDB taskflow-tasks
+         /tasks        GET, POST            handler.py
+         /tasks/{id}   GET, DELETE
+```
+
+| Метод  | Шлях           | Опис                                   | Відповідь |
+|--------|----------------|----------------------------------------|-----------|
+| POST   | /tasks         | Створити задачу (`title` обов'язковий) | 201       |
+| GET    | /tasks         | Список задач                           | 200       |
+| GET    | /tasks/{id}    | Отримати задачу                        | 200 / 404 |
+| DELETE | /tasks/{id}    | Видалити задачу                        | 204 / 404 |
+
+Структура:
+
+```
+serverless/
+├── lambda/handler.py       # код Lambda-функції
+├── tests/test_handler.py   # тести (pytest + moto, без LocalStack)
+├── deploy.sh               # розгортання всіх ресурсів через AWS CLI
+├── test.sh                 # перевірка API за допомогою curl
+└── requirements-dev.txt
+docker-compose.localstack.yml
+```
+
+### Вимоги
+
+Docker, AWS CLI v2, `zip`, `curl`.
+
+### Порядок розгортання
+
+```bash
+docker compose -f docker-compose.localstack.yml up -d
+curl http://localhost:4566/_localstack/health
+./serverless/deploy.sh
+./serverless/test.sh
+```
+
+`deploy.sh` послідовно створює: таблицю DynamoDB `taskflow-tasks` (ключ `id`, `PAY_PER_REQUEST`),
+IAM-роль для Lambda з доступом лише до цієї таблиці, функцію `taskflow-api` (Python 3.12),
+REST API з ресурсами `/tasks` та `/tasks/{id}` (інтеграція `AWS_PROXY`) і розгортає stage `dev`.
+Скрипт можна запускати повторно: API перестворюється, код функції оновлюється.
+Адреса API зберігається в `serverless/.api_url`.
+
+### Тести
+
+```bash
+pip install -r serverless/requirements-dev.txt
+pytest serverless/tests
+```
